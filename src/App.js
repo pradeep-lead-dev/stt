@@ -1,51 +1,100 @@
-
-import "./App.css"
+import { useState, useEffect } from "react";
 import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
 import useClipboard from "react-use-clipboard";
-import {useState} from "react";
-
+import "./App.css";
 
 const App = () => {
-    const [textToCopy, setTextToCopy] = useState();
-    const [isCopied, setCopied] = useClipboard(textToCopy, {
-        successDuration:1000
-    });
+  const [textToCopy, setTextToCopy] = useState("");
+  const [isRecording, setIsRecording] = useState(false);
+  const [isCopied, setCopied] = useClipboard(textToCopy, {
+    successDuration: 1000
+  });
 
-    //subscribe to thapa technical for more awesome videos
+  const { transcript, resetTranscript, browserSupportsSpeechRecognition } = useSpeechRecognition();
 
-    const startListening = () => SpeechRecognition.startListening({ continuous: true, language: 'en-IN' });
-    const { transcript, browserSupportsSpeechRecognition } = useSpeechRecognition();
+  // Update text to copy whenever transcript changes
+  useEffect(() => {
+    setTextToCopy(transcript);
+  }, [transcript]);
 
-    if (!browserSupportsSpeechRecognition) {
-        return null
+  const handleListening = () => {
+    if (isRecording) {
+      SpeechRecognition.stopListening();
+    } else {
+      SpeechRecognition.startListening({ continuous: true, language: 'en-IN' });
     }
+    setIsRecording(!isRecording);
+  };
 
+  const handleReset = () => {
+    resetTranscript();
+    setTextToCopy("");
+  };
+
+  if (!browserSupportsSpeechRecognition) {
     return (
-        <>
-            <div className="container">
-                <h2>Speech to Text Converter</h2>
-                <br/>
-                <p>A React hook that converts speech from the microphone to text and makes it available to your React
-                    components.</p>
-
-                <div className="main-content" onClick={() =>  setTextToCopy(transcript)}>
-                    {transcript}
-                </div>
-
-                <div className="btn-style">
-
-                    <button onClick={setCopied}>
-                        {isCopied ? 'Copied!' : 'Copy to clipboard'}
-                    </button>
-                    <button onClick={startListening}>Start Listening</button>
-                    <button onClick={SpeechRecognition.stopListening}>Stop Listening</button>
-
-                </div>
-
-            </div>
-
-        </>
+      <div className="container">
+        <div className="error-message">
+          Your browser doesn't support speech recognition.
+          Please try Chrome or Edge.
+        </div>
+      </div>
     );
+  }
+
+  return (
+    <div className="app-container">
+      <header>
+        <h3>Dot-STT</h3>
+      </header>
+      
+      <div className="floating-controls">
+        <button 
+          className={`record-btn ${isRecording ? 'recording' : ''}`} 
+          onClick={handleListening}
+          aria-label={isRecording ? 'Stop recording' : 'Start recording'}
+        >
+          <div className="record-icon">
+            <div className={!isRecording ? "record-circle" : "record-square"}></div>
+          </div>
+          <span>{isRecording ? 'Stop' : 'Start'}</span>
+        </button>
+
+        <button 
+          className="action-btn reset-btn" 
+          onClick={handleReset}
+          aria-label="Reset text"
+        >
+          Reset
+        </button>
+        
+        <button 
+          className="action-btn copy-btn" 
+          onClick={setCopied}
+          aria-label="Copy to clipboard"
+        >
+          {isCopied ? 'Copied!' : 'Copy'}
+        </button>
+      </div>
+
+      <div className="text-container">
+        <div className="main-content" onClick={() => setTextToCopy(transcript)}>
+          {transcript || " "}
+        </div>
+        
+        {isRecording && (
+          <div className="recording-indicator">
+            <div className="recording-waves">
+              <div className="wave"></div>
+              <div className="wave"></div>
+              <div className="wave"></div>
+            </div>
+            <span>Recording...</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 };
 
 export default App;
