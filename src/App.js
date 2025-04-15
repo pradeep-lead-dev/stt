@@ -6,10 +6,7 @@ import "./App.css";
 const App = () => {
   const [textToCopy, setTextToCopy] = useState("");
   const [isRecording, setIsRecording] = useState(false);
-  const [isCopied, setCopied] = useClipboard(textToCopy, {
-    successDuration: 1000
-  });
-
+  const [isCopied, setCopied] = useClipboard(textToCopy, { successDuration: 1000 });
   const { transcript, resetTranscript, browserSupportsSpeechRecognition } = useSpeechRecognition();
 
   // Update text to copy whenever transcript changes
@@ -31,12 +28,16 @@ const App = () => {
     setTextToCopy("");
   };
 
+  // Handle textarea changes
+  const handleTextChange = (e) => {
+    setTextToCopy(e.target.value);
+  };
+
   if (!browserSupportsSpeechRecognition) {
     return (
       <div className="container">
         <div className="error-message">
-          Your browser doesn't support speech recognition.
-          Please try Chrome or Edge.
+          Your browser doesn't support speech recognition. Please try Chrome or Edge.
         </div>
       </div>
     );
@@ -47,10 +48,9 @@ const App = () => {
       <header>
         <h3>Dot-STT</h3>
       </header>
-      
       <div className="floating-controls">
-        <button 
-          className={`record-btn ${isRecording ? 'recording' : ''}`} 
+        <button
+          className={`record-btn ${isRecording ? 'recording' : ''}`}
           onClick={handleListening}
           aria-label={isRecording ? 'Stop recording' : 'Start recording'}
         >
@@ -59,29 +59,28 @@ const App = () => {
           </div>
           <span>{isRecording ? 'Stop' : 'Start'}</span>
         </button>
-
-        <button 
-          className="action-btn reset-btn" 
+        <button
+          className="action-btn reset-btn"
           onClick={handleReset}
           aria-label="Reset text"
         >
           Reset
         </button>
-        
-        <button 
-          className="action-btn copy-btn" 
+        <button
+          className="action-btn copy-btn"
           onClick={setCopied}
           aria-label="Copy to clipboard"
         >
           {isCopied ? 'Copied!' : 'Copy'}
         </button>
       </div>
-
       <div className="text-container">
-        <div className="main-content" onClick={() => setTextToCopy(transcript)}>
-          {transcript || " "}
-        </div>
-        
+        <textarea
+          className="main-content"
+          value={textToCopy}
+          onChange={handleTextChange}
+          placeholder="Speech transcript will appear here..."
+        />
         {isRecording && (
           <div className="recording-indicator">
             <div className="recording-waves">
