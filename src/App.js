@@ -88,7 +88,7 @@ const App = () => {
               <div className="wave"></div>
               <div className="wave"></div>
             </div>
-            <span>Recording...</span>
+            {/* <span>Recording...</span> */}
           </div>
         )}
       </div>
