@@ -6,7 +6,7 @@ import "./App.css";
 const App = () => {
   const [textToCopy, setTextToCopy] = useState("");
   const [isRecording, setIsRecording] = useState(false);
-  const [autoCorrect, setAutoCorrect] = useState(false);
+  const autoCorrect = false;
   const [isCopied, setCopied] = useClipboard(textToCopy, { successDuration: 1000 });
   const { transcript, resetTranscript, browserSupportsSpeechRecognition } = useSpeechRecognition();
 
