@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
 import useClipboard from "react-use-clipboard";
 import "./App.css";
@@ -6,18 +6,46 @@ import "./App.css";
 const App = () => {
   const [textToCopy, setTextToCopy] = useState("");
   const [isRecording, setIsRecording] = useState(false);
+  const [autoCorrect, setAutoCorrect] = useState(false);
   const [isCopied, setCopied] = useClipboard(textToCopy, { successDuration: 1000 });
   const { transcript, resetTranscript, browserSupportsSpeechRecognition } = useSpeechRecognition();
 
-  // Update text to copy whenever transcript changes
+  const previousTranscript = useRef(""); // Stores previous transcript
+  const userEdited = useRef(false); // Tracks manual edits
+
+  // Append only new transcript chunks if auto-correct is off or user has edited
   useEffect(() => {
-    setTextToCopy(transcript);
-  }, [transcript]);
+    if (!autoCorrect) {
+      const newChunk = transcript.slice(previousTranscript.current.length);
+      if (newChunk) {
+        setTextToCopy((prev) => prev + newChunk);
+      }
+    } else if (!userEdited.current) {
+      setTextToCopy(transcript);
+    }
+    previousTranscript.current = transcript;
+  }, [transcript, autoCorrect]);
+
+  useEffect(() => {
+    // Restart recognition if it stops unexpectedly
+    const interval = setInterval(() => {
+      const isStopped = !SpeechRecognition.browserSupportsSpeechRecognition || SpeechRecognition._isListening === false;
+      if (isRecording && isStopped) {
+        console.log("Restarting speech recognition...");
+        SpeechRecognition.startListening({ continuous: true, language: 'en-IN' });
+      }
+    }, 3000);
+  
+    return () => clearInterval(interval);
+  }, [isRecording]);
+  
 
   const handleListening = () => {
     if (isRecording) {
       SpeechRecognition.stopListening();
     } else {
+      resetTranscript(); // Clear for fresh session
+      previousTranscript.current = "";
       SpeechRecognition.startListening({ continuous: true, language: 'en-IN' });
     }
     setIsRecording(!isRecording);
@@ -25,12 +53,18 @@ const App = () => {
 
   const handleReset = () => {
     resetTranscript();
+    previousTranscript.current = "";
     setTextToCopy("");
+    userEdited.current = false;
   };
 
-  // Handle textarea changes
   const handleTextChange = (e) => {
     setTextToCopy(e.target.value);
+    userEdited.current = true;
+  };
+
+  const handleAutoCorrectToggle = () => {
+    setAutoCorrect((prev) => !prev);
   };
 
   if (!browserSupportsSpeechRecognition) {
@@ -48,6 +82,7 @@ const App = () => {
       <header>
         <h3>Dot-STT</h3>
       </header>
+
       <div className="floating-controls">
         <button
           className={`record-btn ${isRecording ? 'recording' : ''}`}
@@ -59,21 +94,23 @@ const App = () => {
           </div>
           <span>{isRecording ? 'Stop' : 'Start'}</span>
         </button>
-        <button
-          className="action-btn reset-btn"
-          onClick={handleReset}
-          aria-label="Reset text"
-        >
+
+        <button className="action-btn reset-btn" onClick={handleReset}>
           Reset
         </button>
-        <button
-          className="action-btn copy-btn"
-          onClick={setCopied}
-          aria-label="Copy to clipboard"
-        >
+
+        <button className="action-btn copy-btn" onClick={setCopied}>
           {isCopied ? 'Copied!' : 'Copy'}
         </button>
+{/* 
+        <button
+          className={`action-btn autocorrect-btn ${autoCorrect ? 'on' : 'off'}`}
+          onClick={handleAutoCorrectToggle}
+        >
+          Auto-correct: {autoCorrect ? 'On' : 'Off'}
+        </button> */}
       </div>
+
       <div className="text-container">
         <textarea
           className="main-content"
@@ -88,7 +125,6 @@ const App = () => {
               <div className="wave"></div>
               <div className="wave"></div>
             </div>
-            {/* <span>Recording...</span> */}
           </div>
         )}
       </div>
