@@ -63,10 +63,6 @@ const App = () => {
     userEdited.current = true;
   };
 
-  const handleAutoCorrectToggle = () => {
-    setAutoCorrect((prev) => !prev);
-  };
-
   if (!browserSupportsSpeechRecognition) {
     return (
       <div className="container">
